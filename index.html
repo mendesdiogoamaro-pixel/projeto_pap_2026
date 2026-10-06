@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>InduMove — Mudanças com Carregadores por Indução</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+
+:root{
+  --bg:#0d0d12;
+  --surface:#17171f;
+  --borda:#2a2a36;
+  --cobre:#ff8c42;
+  --cobre2:#ffb877;
+  --ciano:#35e0ff;
+  --texto:#f0ede8;
+  --suave:#9a97a3;
+}
+
+html{ scroll-behavior:smooth; }
+
+body{
+  font-family:'Segoe UI', system-ui, sans-serif;
+  color:var(--texto);
+  background:
+    radial-gradient(600px 400px at 80% 10%, rgba(255,140,66,.08), transparent),
+    radial-gradient(600px 400px at 10% 90%, rgba(53,224,255,.06), transparent),
+    var(--bg);
+  overflow-x:hidden;
+}
+
+/* ---------- NAV ---------- */
+nav{
+  position:fixed; top:0; left:0; right:0; z-index:100;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:16px 5%;
+  background:rgba(13,13,18,.8);
+  backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--borda);
+}
+.logo{ font-weight:800; font-size:1.3rem; letter-spacing:1px; }
+.logo span{ color:var(--cobre); }
+nav ul{ display:flex; gap:28px; list-style:none; }
+nav a{ color:var(--suave); text-decoration:none; font-size:.95rem; transition:color .2s; }
+nav a:hover{ color:var(--ciano); }
+
+/* ---------- HERO ---------- */
+.hero{
+  min-height:100vh;
+  display:grid; grid-template-columns:1.1fr 1fr;
+  align-items:center; gap:40px;
+  padding:130px 8% 60px;
+}
+.eyebrow{ color:var(--ciano); text-transform:uppercase; letter-spacing:3px; font-size:.8rem; margin-bottom:16px; }
+.hero h1{ font-size:clamp(2.2rem, 5vw, 3.6rem); line-height:1.15; margin-bottom:20px; }
+.hero h1 em{ color:var(--cobre); font-style:normal; }
+.lead{ color:var(--suave); font-size:1.1rem; line-height:1.7; margin-bottom:32px; max-width:520px; }
+.botoes{ display:flex; gap:14px; flex-wrap:wrap; }
+.btn{
+  padding:14px 28px; border-radius:50px; font-weight:700; font-size:1rem;
+  cursor:pointer; border:none; transition:transform .2s, box-shadow .2s, border-color .2s, color .2s;
+  text-decoration:none; display:inline-block;
+}
+.btn-primario{
+  background:linear-gradient(90deg, var(--cobre), var(--cobre2));
+  color:#1a1208; box-shadow:0 8px 30px rgba(255,140,66,.35);
+}
+.btn-primario:hover{ transform:translateY(-3px); box-shadow:0 14px 40px rgba(255,140,66,.5); }
+.btn-fantasma{ background:transparent; color:var(--texto); border:1px solid var(--borda); }
+.btn-fantasma:hover{ border-color:var(--ciano); color:var(--ciano); }
+
+/* ---------- CENA DE CARREGAMENTO ---------- */
+.cena{ position:relative; height:420px; display:flex; align-items:flex-end; justify-content:center; }
+.base{
+  width:220px; height:36px; border-radius:50%;
+  background:linear-gradient(180deg, #26262f, #141419);
+  border:2px solid var(--cobre);
+  box-shadow:0 0 40px rgba(255,140,66,.35), inset 0 4px 12px rgba(0,0,0,.5);
+  position:relative; z-index:3;
+}
+.onde{
+  position:absolute; bottom:8px; left:50%;
+  width:220px; height:36px; border-radius:50%;
+  border:2px solid var(--cobre);
+  transform:translateX(-50%);
+  animation:onda 2.4s ease-out infinite;
+  opacity:0;
+}
+.onde:nth-of-type(2){ animation-delay:.8s; }
+.onde:nth-of-type(3){ animation-delay:1.6s; }
+@keyframes onda{
+  0%  { transform:translateX(-50%) scale(1); opacity:.7; }
+  100%{ transform:translateX(-50%) scale(2.2); opacity:0; }
+}
+.caixa{
+  position:absolute; bottom:70px; left:50%; transform:translateX(-50%);
+  width:120px; height:100px; border-radius:8px;
+  background:linear-gradient(160deg, #c98d4e, #9a6a38);
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px;
+  box-shadow:0 20px 40px rgba(0,0,0,.5), 0 0 30px rgba(255,140,66,.25);
+  animation:flutuar 2.4s ease-in-out infinite;
+  transition:box-shadow .4s;
+  z-index:2;
+}
+.caixa::before{
+  content:""; position:absolute; top:0; left:50%; transform:translateX(-50%);
+  width:26px; height:100%; background:rgba(255,255,255,.22);
+}
+.caixa.surto{
+  box-shadow:0 20px 40px rgba(0,0,0,.5), 0 0 70px rgba(53,224,255,.9);
+  border:2px solid var(--ciano);
+}
+@keyframes flutuar{
+  0%,100%{ transform:translateX(-50%) translateY(0); }
+  50%    { transform:translateX(-50%) translateY(-18px); }
+}
+.bateria{
+  width:60px; height:24px; border:2px solid #1a1208; border-radius:5px;
+  position:relative; padding:3px; background:rgba(0,0,0,.3);
+}
+.bateria::after{
+  content:""; position:absolute; right:-7px; top:6px;
+  width:5px; height:10px; background:#1a1208; border-radius:0 2px 2px 0;
+}
+.carga{
+  display:block; height:100%; width:15%; border-radius:2px;
+  background:linear-gradient(90deg, #7dff6a, var(--ciano));
+  animation:carregar 2.4s ease-in-out infinite;
+}
+@keyframes carregar{ 0%{ width:15%; } 70%{ width:100%; } 100%{ width:100%; } }
+
+/* ---------- MARQUEE ---------- */
+.marquee{
+  border-top:1px solid var(--borda); border-bottom:1px solid var(--borda);
+  background:var(--surface); overflow:hidden; white-space:nowrap; padding:14px 0;
+}
+.marquee-inner{ display:inline-block; animation:deslizar 22s linear infinite; }
+.marquee span{ margin:0 30px; color:var(--suave); font-weight:700; letter-spacing:2px; font-size:.85rem; }
+.marquee span b{ color:var(--cobre); }
+@keyframes deslizar{ to{ transform:translateX(-50%); } }
+
+/* ---------- SECÇÕES ---------- */
+section{ padding:90px 8%; }
+.titulo-secao{ text-align:center; margin-bottom:60px; }
+.titulo-secao h2{ font-size:2.2rem; margin-bottom:12px; }
+.titulo-secao h2 span{ color:var(--cobre); }
+.titulo-secao p{ color:var(--suave); max-width:560px; margin:0 auto; line-height:1.6; }
+
+/* ---------- GALERIA ---------- */
+.galeria-grid{
+  display:grid; grid-template-columns:repeat(2,1fr); gap:24px; max-width:1100px; margin:0 auto;
+}
+.foto{
+  background:var(--surface); border:1px solid var(--borda); border-radius:18px;
+  overflow:hidden; transition:transform .25s, border-color .25s, box-shadow .25s;
+}
+.foto:hover{ transform:translateY(-6px); border-color:var(--cobre); box-shadow:0 15px 45px rgba(255,140,66,.15); }
+.foto svg{ display:block; width:100%; height:auto; }
+.foto figcaption{
+  padding:16px 20px; color:var(--suave); font-size:.95rem; line-height:1.5;
+  border-top:1px solid var(--borda);
+}
+.foto figcaption b{ color:var(--texto); }
+
+/* animações dentro dos SVGs */
+.roda{ transform-box:fill-box; transform-origin:center; animation:girar 1.4s linear infinite; }
+@keyframes girar{ to{ transform:rotate(360deg); } }
+
+.flutua{ animation:flutuaSvg 3s ease-in-out infinite; }
+@keyframes flutuaSvg{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-8px); } }
+
+.onda-svg{
+  transform-box:fill-box; transform-origin:center;
+  animation:ondaSvg 2.4s ease-out infinite; opacity:0;
+}
+.onda-svg.o2{ animation-delay:1.2s; }
+@keyframes ondaSvg{ 0%{ transform:scale(1); opacity:.8; } 100%{ transform:scale(1.7); opacity:0; } }
+
+.veloz{ animation:veloz 1s ease-in-out infinite; }
+@keyframes veloz{ 0%,100%{ opacity:.5; transform:translateX(0); } 50%{ opacity:.15; transform:translateX(-6px); } }
+
+/* ---------- PASSOS ---------- */
+.passos{
+  display:grid; grid-template-columns:repeat(3,1fr); gap:24px; max-width:1100px; margin:0 auto;
+}
+.passo{
+  background:var(--surface); border:1px solid var(--borda); border-radius:18px;
+  padding:36px 28px; transition:transform .25s, border-color .25s;
+}
+.passo:hover{ transform:translateY(-6px); border-color:var(--cobre); }
+.passo .num{
+  display:block; font-size:3rem; font-weight:800; margin-bottom:14px;
+  color:transparent; -webkit-text-stroke:1.5px var(--cobre);
+}
+.passo h3{ margin-bottom:10px; font-size:1.2rem; }
+.passo p{ color:var(--suave); line-height:1.6; font-size:.95rem; }
+
+/* ---------- SERVIÇOS ---------- */
+.servicos{
+  display:grid; grid-template-columns:repeat(2,1fr); gap:24px; max-width:1000px; margin:0 auto;
+}
+.servico{
+  background:var(--surface); border:1px solid var(--borda); border-radius:18px;
+  padding:30px; display:flex; gap:18px; align-items:flex-start;
+  transition:transform .25s, border-color .25s;
+}
+.servico:hover{ transform:translateY(-5px); border-color:var(--ciano); }
+.servico .icone{ flex-shrink:0; }
+.servico .icone svg{ width:52px; height:52px; }
+.servico h3{ margin-bottom:8px; font-size:1.15rem; }
+.servico p{ color:var(--suave); line-height:1.6; font-size:.95rem; }
+
+/* ---------- STATS ---------- */
+.stats{
+  display:grid; grid-template-columns:repeat(4,1fr); gap:20px;
+  text-align:center; max-width:1000px; margin:0 auto;
+}
+.stat .valor{ font-size:2.6rem; font-weight:800; color:var(--ciano); }
+.stat .rotulo{ color:var(--suave); font-size:.9rem; margin-top:6px; }
+
+/* ---------- CONTACTO ---------- */
+form{ max-width:640px; margin:0 auto; display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+form input, form textarea{
+  background:var(--surface); border:1px solid var(--borda); color:var(--texto);
+  padding:14px 16px; border-radius:12px; font-size:1rem; font-family:inherit;
+}
+form input:focus, form textarea:focus{ outline:none; border-color:var(--ciano); }
+form textarea{ grid-column:1/-1; resize:vertical; min-height:100px; }
+form button{ grid-column:1/-1; }
+.nota{ text-align:center; color:var(--suave); font-size:.85rem; margin-top:20px; font-style:italic; }
+
+/* ---------- FOOTER / TOAST ---------- */
+footer{
+  border-top:1px solid var(--borda); text-align:center;
+  padding:30px 5%; color:var(--suave); font-size:.9rem;
+}
+footer b{ color:var(--cobre); }
+.toast{
+  position:fixed; bottom:30px; left:50%;
+  transform:translateX(-50%) translateY(200%);
+  background:var(--surface); border:1px solid var(--cobre); color:var(--texto);
+  padding:14px 24px; border-radius:50px; font-weight:600;
+  box-shadow:0 10px 40px rgba(0,0,0,.6); z-index:200;
+  transition:transform .45s cubic-bezier(.2,.9,.3,1.3);
+}
+.toast.mostrar{ transform:translateX(-50%) translateY(0); }
+
+/* ---------- RESPONSIVO ---------- */
+@media(max-width:860px){
+  nav ul{ display:none; }
+  .hero{ grid-template-columns:1fr; text-align:center; padding-top:110px; }
+  .lead{ margin-left:auto; margin-right:auto; }
+  .botoes{ justify-content:center; }
+  .passos, .servicos, .galeria-grid{ grid-template-columns:1fr; }
+  .stats{ grid-template-columns:repeat(2,1fr); }
+  .cena{ height:340px; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">Indu<span>Move</span></div>
+  <ul>
+    <li><a href="#como">Como funciona</a></li>
+    <li><a href="#servicos">Serviços</a></li>
+    <li><a href="#galeria">Galeria</a></li>
+    <li><a href="#contacto">Contactos</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<header class="hero">
+  <div>
+    <p class="eyebrow">Mudanças · Energia sem fios</p>
+    <h1>Mudamos a tua casa. Os nossos carregadores carregam-se <em>por indução</em>.</h1>
+    <p class="lead">
+      Esquece os carregadores que param para almoço ou pedem "só um cafézinho".
+      Na InduMove, cada carregador recebe uma carga completa na base de indução
+      antes de tocar na primeira caixa. Sem cabos. Sem pausas. Sem desculpas.
+    </p>
+    <div class="botoes">
+      <a href="#contacto" class="btn btn-primario">Pedir orçamento</a>
+      <button class="btn btn-fantasma" onclick="demonstracao()">⚡ Ver carregador a carregar</button>
+    </div>
+  </div>
+
+  <div class="cena">
+    <div class="onde"></div>
+    <div class="onde"></div>
+    <div class="onde"></div>
+    <div class="caixa">
+      <span class="bateria"><span class="carga"></span></span>
+    </div>
+    <div class="base"></div>
+  </div>
+</header>
+
+<!-- MARQUEE -->
+<div class="marquee">
+  <div class="marquee-inner">
+    <span>SEM CABOS</span><span><b>·</b> SEM CAFÉ</span><span><b>·</b> SEM DESCULPAS</span><span><b>·</b> 100% INDUÇÃO</span><span><b>·</b> CAIXAS A VOAR</span><span><b>·</b> ZERO COPOS PARTIDOS*</span><span><b>·</b></span>
+    <span>SEM CABOS</span><span><b>·</b> SEM CAFÉ</span><span><b>·</b> SEM DESCULPAS</span><span><b>·</b> 100% INDUÇÃO</span><span><b>·</b> CAIXAS A VOAR</span><span><b>·</b> ZERO COPOS PARTIDOS*</span><span><b>·</b></span>
+  </div>
+</div>
+
+<!-- COMO FUNCIONA -->
+<section id="como">
+  <div class="titulo-secao">
+    <h2>Como <span>funciona</span></h2>
+    <p>Três passos entre a tua casa atual e a nova. Nenhum deles envolve pausa para café.</p>
+  </div>
+  <div class="passos">
+    <div class="passo">
+      <span class="num">01</span>
+      <h3>Marca a mudança</h3>
+      <p>Diz-nos a data, a origem e o destino. Nós tratamos do resto — incluindo da eletrónica dos nossos colaboradores.</p>
+    </div>
+    <div class="passo">
+      <span class="num">02</span>
+      <h3>Carregadores na base</h3>
+      <p>Antes de começar, cada carregador é colocado na base de indução portátil. Carga máxima em 4 minutos.</p>
+    </div>
+    <div class="passo">
+      <span class="num">03</span>
+      <h3>Mudança sem interrupções</h3>
+      <p>Sem pausas, sem "cinco minutinhos", sem almoços duplos. Só caixas a voar de uma casa para a outra.</p>
+    </div>
+  </div>
+</section>
+
+<!-- SERVIÇOS -->
+<section id="servicos">
+  <div class="titulo-secao">
+    <h2>Os nossos <span>serviços</span></h2>
+    <p>Tudo o que precisas para mudar — e para manter os carregadores a render ao máximo.</p>
+  </div>
+  <div class="servicos">
+    <div class="servico">
+      <span class="icone">
+        <svg viewBox="0 0 48 48" aria-hidden="true">
+          <rect x="5" y="24" width="20" height="17" rx="2" fill="#c98d4e"/>
+          <rect x="5" y="24" width="20" height="4" fill="#9a6a38"/>
+          <rect x="27" y="27" width="15" height="14" rx="2" fill="#b57e42"/>
+          <rect x="11" y="10" width="17" height="12" rx="2" fill="#d69a5b"/>
+          <rect x="11" y="10" width="17" height="3.5" fill="#9a6a38"/>
+        </svg>
+      </span>
+      <div>
+        <h3>Mudanças domésticas</h3>
+        <p>Do T1 à vivenda. Móveis, eletrodomésticos e aquele sofá que nunca passa na porta (mas nós fazemos passar).</p>
+      </div>
+    </div>
+    <div class="servico">
+      <span class="icone">
+        <svg viewBox="0 0 48 48" aria-hidden="true">
+          <rect x="7" y="8" width="20" height="33" rx="2" fill="#35e0ff" opacity=".85"/>
+          <rect x="27" y="18" width="14" height="23" rx="2" fill="#ff8c42"/>
+          <g fill="#0d0d12">
+            <rect x="11" y="13" width="4" height="5"/><rect x="19" y="13" width="4" height="5"/>
+            <rect x="11" y="22" width="4" height="5"/><rect x="19" y="22" width="4" height="5"/>
+            <rect x="11" y="31" width="4" height="5"/><rect x="19" y="31" width="4" height="5"/>
+            <rect x="31" y="24" width="3" height="4"/><rect x="37" y="24" width="3" height="4"/>
+            <rect x="31" y="31" width="3" height="4"/><rect x="37" y="31" width="3" height="4"/>
+          </g>
+        </svg>
+      </span>
+      <div>
+        <h3>Mudanças de escritório</h3>
+        <p>Servidores, secretárias, cadeiras gamer e a máquina de café — essa não precisa de indução, precisa de calibração.</p>
+      </div>
+    </div>
+    <div class="servico">
+      <span class="icone">
+        <svg viewBox="0 0 48 48" aria-hidden="true">
+          <path d="M24 5 L40 11 V23 q0 12-16 19 Q8 35 8 23 V11 z" fill="none" stroke="#35e0ff" stroke-width="3" stroke-linejoin="round"/>
+          <path d="M16 24 l6 6 11-12" fill="none" stroke="#7dff6a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </span>
+      <div>
+        <h3>Embalamento premium</h3>
+        <p>Bolha dupla para a TV, tripla para o teu orgulho. Tudo identificado e inventariado digitalmente.</p>
+      </div>
+    </div>
+    <div class="servico">
+      <span class="icone">
+        <svg viewBox="0 0 48 48" aria-hidden="true">
+          <rect x="15" y="8" width="18" height="26" rx="4" fill="none" stroke="#ff8c42" stroke-width="3"/>
+          <ellipse cx="24" cy="40" rx="17" ry="4" fill="none" stroke="#35e0ff" stroke-width="3" opacity=".8"/>
+          <path d="M27 14 l-6 9 h5 l-4 9 9-12 h-5 l5-6 z" fill="#35e0ff"/>
+        </svg>
+      </span>
+      <div>
+        <h3>Base de indução portátil</h3>
+        <p>Alugamos a base para carregares os teus próprios carregadores em casa. Compatível com todos os modelos pós-2025.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- GALERIA -->
+<section id="galeria">
+  <div class="titulo-secao">
+    <h2>A equipa <span>em ação</span></h2>
+    <p>Ilustrações oficiais da InduMove — zero fotógrafos, máxima energia induzida.</p>
+  </div>
+  <div class="galeria-grid">
+
+    <!-- Para usares fotos reais, substitui o <svg> por:
+         <img src="tua-foto.jpg" alt="descrição" style="width:100%;display:block"> -->
+
+    <!-- 1. O camião -->
+    <figure class="foto">
+      <svg viewBox="0 0 400 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Camião da InduMove">
+        <rect x="0" y="185" width="400" height="35" fill="#1a1a24"/>
+        <line x1="0" y1="202" x2="400" y2="202" stroke="#2e2e3a" stroke-width="3" stroke-dasharray="26 18"/>
+        <circle cx="330" cy="55" r="30" fill="#ff8c42" opacity=".12"/>
+        <line class="veloz" x1="15" y1="90"  x2="45" y2="90"  stroke="#35e0ff" stroke-width="3" stroke-linecap="round"/>
+        <line class="veloz" x1="5"  y1="112" x2="40" y2="112" stroke="#35e0ff" stroke-width="3" stroke-linecap="round" style="animation-delay:.3s"/>
+        <line class="veloz" x1="18" y1="134" x2="48" y2="134" stroke="#35e0ff" stroke-width="3" stroke-linecap="round" style="animation-delay:.6s"/>
+        <g>
+          <rect x="55" y="55" width="190" height="105" rx="10" fill="#ff8c42"/>
+          <rect x="55" y="55" width="190" height="18" rx="9" fill="#e07530"/>
+          <path d="M140 80 l-16 28 h13 l-7 26 23-33 h-13 l11-21 z" fill="#1a1208"/>
+          <text x="152" y="148" text-anchor="middle" font-size="17" font-weight="800" fill="#1a1208" font-family="Segoe UI, sans-serif">InduMove</text>
+          <path d="M245 82 h48 q6 0 10 5 l32 37 q3 4 3 9 v27 h-93 z" fill="#ffb877"/>
+          <path d="M256 92 h32 q4 0 7 4 l20 24 h-59 z" fill="#35e0ff" opacity=".85"/>
+        </g>
+        <g class="roda">
+          <circle cx="100" cy="165" r="22" fill="#14141a" stroke="#2e2e3a" stroke-width="3"/>
+          <circle cx="100" cy="165" r="8" fill="#3a3a46"/>
+          <rect x="98" y="146" width="4" height="13" fill="#6a6a78"/>
+        </g>
+        <g class="roda">
+          <circle cx="152" cy="165" r="22" fill="#14141a" stroke="#2e2e3a" stroke-width="3"/>
+          <circle cx="152" cy="165" r="8" fill="#3a3a46"/>
+          <rect x="150" y="146" width="4" height="13" fill="#6a6a78"/>
+        </g>
+        <g class="roda">
+          <circle cx="287" cy="165" r="22" fill="#14141a" stroke="#2e2e3a" stroke-width="3"/>
+          <circle cx="287" cy="165" r="8" fill="#3a3a46"/>
+          <rect x="285" y="146" width="4" height="13" fill="#6a6a78"/>
+        </g>
+      </svg>
+      <figcaption><b>A frota</b> — 100% elétrica e carregada por indução, mesmo durante a viagem.</figcaption>
+    </figure>
+
+    <!-- 2. A base de indução -->
+    <figure class="foto">
+      <svg viewBox="0 0 400 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Carregador na base de indução">
+        <circle cx="200" cy="105" r="85" fill="#35e0ff" opacity=".05"/>
+        <ellipse class="onda-svg"    cx="200" cy="160" rx="60" ry="12" fill="none" stroke="#35e0ff" stroke-width="2"/>
+        <ellipse class="onda-svg o2" cx="200" cy="160" rx="60" ry="12" fill="none" stroke="#35e0ff" stroke-width="2"/>
+        <ellipse cx="200" cy="160" rx="55" ry="11" fill="#26262f" stroke="#ff8c42" stroke-width="3"/>
+        <g class="flutua">
+          <rect x="172" y="50" width="56" height="100" rx="9" fill="#17171f" stroke="#35e0ff" stroke-width="2"/>
+          <rect x="181" y="66" width="38" height="60" rx="3" fill="#0d0d12"/>
+          <rect x="188" y="84" width="24" height="14" rx="3" fill="none" stroke="#7dff6a" stroke-width="2"/>
+          <rect x="190" y="86" width="15" height="10" fill="#7dff6a"/>
+          <text x="200" y="118" text-anchor="middle" font-size="10" fill="#9a97a3" font-family="Segoe UI, sans-serif">100%</text>
+          <path d="M206 128 l-8 14 h6 l-4 12 11-15 h-6 l6-11 z" fill="#35e0ff"/>
+        </g>
+      </svg>
+      <figcaption><b>Base de indução portátil</b> — carregadores a 100% antes de cada mudança. Sem um único cabo.</figcaption>
+    </figure>
+
+    <!-- 3. As caixas -->
+    <figure class="foto">
+      <svg viewBox="0 0 400 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Caixas embaladas">
+        <circle cx="90" cy="60" r="45" fill="#ff8c42" opacity=".07"/>
+        <circle cx="330" cy="150" r="35" fill="#35e0ff" opacity=".06"/>
+        <g class="flutua" style="animation-delay:.5s">
+          <rect x="95" y="52" width="70" height="46" rx="5" fill="#d69a5b"/>
+          <rect x="95" y="52" width="70" height="9" fill="#9a6a38"/>
+          <path d="M130 68 l-8 13 h6 l-4 10 11-14 h-6 l6-9 z" fill="#1a1208"/>
+        </g>
+        <g>
+          <rect x="70" y="105" width="100" height="80" rx="5" fill="#c98d4e"/>
+          <rect x="70" y="105" width="100" height="12" fill="#9a6a38"/>
+          <rect x="114" y="105" width="12" height="80" fill="#9a6a38" opacity=".7"/>
+          <path d="M113 140 l-9 16 h7 l-4 13 12-17 h-7 l6-12 z" fill="#1a1208"/>
+        </g>
+        <g>
+          <rect x="185" y="125" width="75" height="60" rx="5" fill="#b57e42"/>
+          <rect x="185" y="125" width="75" height="10" fill="#8f5f30"/>
+          <path d="M222 148 l-8 13 h6 l-4 10 11-14 h-6 l6-9 z" fill="#1a1208"/>
+        </g>
+      </svg>
+      <figcaption><b>Embalamento premium</b> — nem o teu copo favorito escapa às três camadas de bolha.</figcaption>
+    </figure>
+
+    <!-- 4. O elemento da equipa -->
+    <figure class="foto">
+      <svg viewBox="0 0 400 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Membro da equipa a carregar caixa">
+        <circle cx="200" cy="100" r="80" fill="#35e0ff" opacity=".05"/>
+        <g class="flutua">
+          <rect x="188" y="130" width="10" height="48" rx="4" fill="#3a3a46"/>
+          <rect x="202" y="130" width="10" height="48" rx="4" fill="#3a3a46"/>
+          <rect x="182" y="174" width="19" height="8" rx="3" fill="#14141a"/>
+          <rect x="199" y="174" width="19" height="8" rx="3" fill="#14141a"/>
+          <rect x="183" y="82" width="34" height="55" rx="12" fill="#35e0ff"/>
+          <circle cx="200" cy="62" r="17" fill="#ffb877"/>
+          <path d="M183 58 a17 17 0 0 1 34 0 z" fill="#ff8c42"/>
+          <rect x="205" y="55" width="20" height="5" rx="2" fill="#ff8c42"/>
+          <rect x="150" y="100" width="62" height="46" rx="5" fill="#c98d4e"/>
+          <rect x="150" y="100" width="62" height="9" fill="#9a6a38"/>
+          <path d="M181 116 l-8 14 h6 l-4 11 11-15 h-6 l6-10 z" fill="#1a1208"/>
+          <path d="M186 95 Q166 102 158 108" stroke="#ffb877" stroke-width="8" fill="none" stroke-linecap="round"/>
+          <path d="M214 95 Q222 104 210 110" stroke="#ffb877" stroke-width="8" fill="none" stroke-linecap="round"/>
+        </g>
+      </svg>
+      <figcaption><b>Equipa energética</b> — café? Não, obrigado. Nós funcionamos a indução.</figcaption>
+    </figure>
+
+  </div>
+</section>
+
+<!-- STATS -->
+<section>
+  <div class="stats">
+    <div class="stat">
+      <div class="valor" data-valor="1247">0</div>
+      <div class="rotulo">mudanças concluídas</div>
+    </div>
+    <div class="stat">
+      <div class="valor" data-valor="0">0</div>
+      <div class="rotulo">cafés bebidos em serviço</div>
+    </div>
+    <div class="stat">
+      <div class="valor" data-valor="100" data-sufixo="%">0</div>
+      <div class="rotulo">energia induzida</div>
+    </div>
+    <div class="stat">
+      <div class="valor" data-valor="4.9" data-decimais="1">0</div>
+      <div class="rotulo">avaliação média ⭐</div>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACTO -->
+<section id="contacto">
+  <div class="titulo-secao">
+    <h2>Pede o teu <span>orçamento</span></h2>
+    <p>Resposta em menos de 24 horas. Os nossos carregadores já estão na base.</p>
+  </div>
+  <form id="formulario">
+    <input type="text" placeholder="O teu nome" required>
+    <input type="tel" placeholder="Telefone / email" required>
+    <input type="text" placeholder="Morada atual" required>
+    <input type="text" placeholder="Morada de destino" required>
+    <textarea placeholder="O que vais mudar? (divisões, pisos, elevador, piano de cauda...)"></textarea>
+    <button type="submit" class="btn btn-primario">Pedir orçamento gratuito</button>
+  </form>
+  <p class="nota">* Nenhum carregador foi sobrecarregado na criação deste site.</p>
+</section>
+
+<footer>
+  InduMove © 2025 — Mudanças com alma <b>(magnética)</b>. Feito por indução, não por café.
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ---------- TOAST ----------
+const toastEl = document.getElementById("toast");
+let toastTimer;
+function toast(msg){
+  toastEl.textContent = msg;
+  toastEl.classList.add("mostrar");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toastEl.classList.remove("mostrar"), 3500);
+}
+
+// ---------- BOTÃO DEMO ----------
+function demonstracao(){
+  const caixa = document.querySelector(".caixa");
+  caixa.classList.add("surto");
+  toast("⚡ Carregador a 100%! Energia induzida — zero cafés gastos.");
+  setTimeout(() => caixa.classList.remove("surto"), 2400);
+}
+
+// ---------- CONTADORES ANIMADOS ----------
+const observador = new IntersectionObserver(entradas => {
+  entradas.forEach(e => {
+    if(!e.isIntersecting) return;
+    const el = e.target;
+    const fim = parseFloat(el.dataset.valor);
+    const sufixo = el.dataset.sufixo || "";
+    const decimais = parseInt(el.dataset.decimais || 0);
+    let atual = 0;
+    const incremento = Math.max(fim / 60, 0.05);
+    const t = setInterval(() => {
+      atual = Math.min(fim, atual + incremento);
+      el.textContent = atual.toFixed(decimais) + sufixo;
+      if(atual >= fim) clearInterval(t);
+    }, 25);
+    observador.unobserve(el);
+  });
+}, { threshold: .6 });
+document.querySelectorAll(".valor").forEach(v => observador.observe(v));
+
+// ---------- FORMULÁRIO ----------
+document.getElementById("formulario").addEventListener("submit", e => {
+  e.preventDefault();
+  toast("📦 Pedido recebido! Um carregador totalmente carregado contacta-te em breve.");
+  e.target.reset();
+});
+</script>
+</body>
+</html>
